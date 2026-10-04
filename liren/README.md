@@ -39,10 +39,16 @@ der Wiederanlauf erzeugt dieselbe Aufgabe nicht nochmals.
 ## Automatische Prüfung
 
 ```text
-docker compose -f liren/compose.pruefung.yml up -d
-node liren/http-pruefung.mjs
-docker compose -f liren/compose.pruefung.yml stop
+node --test liren/pruefung-konfiguration.test.mjs liren/pruef-lauf.test.mjs
+node liren/pruefen.mjs
 ```
+
+Jeder Lauf verwendet eigene freie Ports, einen eigenen Compose-Projektnamen
+und eigene Image-Verweise. Auch bei Fehler oder Abbruch werden ausschließlich
+seine Container und sein Prüfvolume entfernt. Die Vorführung und deren Daten
+bleiben erhalten. Die Images müssen vorher lokal gebaut sein; bei einem
+Nachzug wählt die Steuerung die frisch gebauten Images über
+`LIREN_PRUEF_QUELL_IMAGE` und `LIREN_PRUEF_QUELL_DIENST_IMAGE`.
 
 Die Prüfung verwendet eine eigene Datenbank, synthetische Konten und die
 simulierte zentrale Liren-API. Der zusätzliche Dienst und das Go-Paket sind

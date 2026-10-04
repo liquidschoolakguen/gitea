@@ -1,12 +1,28 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
+import {get} from 'node:http';
 
-const basis = 'http://127.0.0.1:13300';
-const kontrolle = 'http://127.0.0.1:13304';
+const port = Number(process.env.LIREN_PRUEF_PORT ?? 13300);
+const kontrollPort = Number(process.env.LIREN_PRUEF_KONTROLL_PORT ?? 13304);
+const projekt = process.env.LIREN_PRUEF_PROJEKT ?? 'liren-gitea-pruefung';
+assert.ok(Number.isInteger(port) && port >= 10000 && port <= 65535);
+assert.ok(Number.isInteger(kontrollPort) && kontrollPort >= 10000 && kontrollPort <= 65535 && port !== kontrollPort);
+assert.match(projekt, /^liren-(?:gitea-pruefung|pruefung-[a-z0-9]{6,32})$/u);
+const basis = `http://127.0.0.1:${port}`;
+const kontrolle = `http://127.0.0.1:${kontrollPort}`;
+const container = execFileSync('docker', ['compose', '-p', projekt, '-f', 'liren/compose.pruefung.yml', 'ps', '-q', 'gitea'], {encoding: 'utf8', windowsHide: true}).trim();
+assert.match(container, /^[a-f0-9]{12,64}$/u);
+function erreichbar(url) {
+  return new Promise((resolve) => {
+    const request = get(url, (antwort) => {antwort.resume(); resolve(antwort.statusCode === 200)});
+    request.setTimeout(2000, () => request.destroy());
+    request.once('error', () => resolve(false));
+  });
+}
 for (const url of [`${basis}/api/v1/version`, kontrolle]) {
   let bereit = false;
   for (let versuch = 0; versuch < 150; versuch += 1) {
-    try { bereit = (await fetch(url)).ok } catch { /* Start noch nicht abgeschlossen. */ }
+    bereit = await erreichbar(url);
     if (bereit) break;
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
@@ -43,7 +59,7 @@ async function anmelden(user) {
 for (const [user, admin] of [['bob', true], ['alice', false], ['carol', false]]) {
   const vorhanden = await api(user, '/user');
   if (vorhanden.status === 200) continue;
-  execFileSync('docker', ['exec', '--user', 'git', 'liren-gitea-pruefung-gitea-1', 'gitea', '--config', '/data/gitea/conf/app.ini', 'admin', 'user', 'create', '--username', user, '--password', 'LirenDemo2026!', '--email', `${user}@example.invalid`, `--admin=${admin}`, '--must-change-password=false'], {stdio: 'pipe'});
+  execFileSync('docker', ['exec', '--user', 'git', container, 'gitea', '--config', '/data/gitea/conf/app.ini', 'admin', 'user', 'create', '--username', user, '--password', 'LirenDemo2026!', '--email', `${user}@example.invalid`, `--admin=${admin}`, '--must-change-password=false'], {stdio: 'pipe', windowsHide: true});
 }
 const repo = `liren-pruefung-${Date.now()}`;
 await erzeuge('bob', '/user/repos', {name: repo, private: false, auto_init: true});
