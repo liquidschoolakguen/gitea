@@ -6,6 +6,7 @@
     "${configDir}/tests/e2e/**/.*",
     "${configDir}/tools/**/*",
     "${configDir}/tools/**/.*",
+    "${configDir}/liren/*.mjs",
     "${configDir}/web_src/js/**/*",
     "${configDir}/web_src/js/**/.*",
   ],

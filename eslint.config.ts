@@ -1229,6 +1229,15 @@ export default defineConfig([
     },
   },
   {
+    files: ['liren/*.mjs'],
+    ignores: ['liren/app.mjs'],
+    languageOptions: {globals: globals.nodeBuiltin},
+  },
+  {
+    files: ['liren/app.mjs'],
+    languageOptions: {globals: globals.browser},
+  },
+  {
     files: ['**/*.worker.*', '**/*.sharedworker.*'],
     rules: {
       'no-restricted-globals': [2, 'window', ...restrictedGlobals],

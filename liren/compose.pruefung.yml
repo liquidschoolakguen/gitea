@@ -1,0 +1,35 @@
+name: liren-gitea-pruefung
+services:
+  gitea:
+    image: liren-gitea:28.0.0
+    ports:
+      - "127.0.0.1:13300:3000"
+      - "127.0.0.1:13304:3304"
+    volumes:
+      - pruefdaten:/data
+    environment:
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__database__PATH: /data/gitea/gitea.db
+      GITEA__server__ROOT_URL: http://127.0.0.1:13300/
+      GITEA__server__OFFLINE_MODE: "true"
+      GITEA__server__DISABLE_SSH: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__actions__ENABLED: "false"
+      GITEA__repository__DISABLE_MIGRATIONS: "true"
+      LIREN_ENABLED: "true"
+      REFERENZ_MODUS: lokal
+      LIREN_APP: gitea-pruefung
+      LIREN_WIDGET_ORIGIN: http://localhost:5178
+      LIREN_DIENST_URL: http://127.0.0.1:3303
+      LIREN_DIENST_SECRET: liren-gitea-pruefung-dienstgeheimnis-lokal-2026
+  dienst:
+    image: liren-gitea-dienst:0.28.0
+    network_mode: "service:gitea"
+    depends_on:
+      - gitea
+    volumes:
+      - ./pruef-dienst.mjs:/dienst/liren/pruef-dienst.mjs:ro
+    command: ["node", "/dienst/liren/pruef-dienst.mjs"]
+volumes:
+  pruefdaten:

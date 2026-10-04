@@ -21,6 +21,7 @@ import (
 	"gitea.dev/services/context"
 	"gitea.dev/services/convert"
 	issue_service "gitea.dev/services/issue"
+	liren_service "gitea.dev/services/liren"
 )
 
 // ListIssueComments list all the comments of an issue
@@ -398,6 +399,10 @@ func CreateIssueComment(ctx *context.APIContext) {
 
 	comment, err := issue_service.CreateIssueComment(ctx, ctx.Doer, ctx.Repo.Repository, issue, form.Body, nil)
 	if err != nil {
+		if sperre, ok := errors.AsType[*liren_service.SperrFehler](err); ok {
+			ctx.JSON(sperre.Status, sperre.Body)
+			return
+		}
 		if errors.Is(err, user_model.ErrBlockedUser) {
 			ctx.APIError(http.StatusForbidden, err.Error())
 		} else {
@@ -586,7 +591,9 @@ func editIssueComment(ctx *context.APIContext, form api.EditIssueCommentOption) 
 		oldContent := comment.Content
 		comment.Content = form.Body
 		if err := issue_service.UpdateComment(ctx, comment, comment.ContentVersion, ctx.Doer, oldContent); err != nil {
-			if errors.Is(err, user_model.ErrBlockedUser) {
+			if sperre, ok := errors.AsType[*liren_service.SperrFehler](err); ok {
+				ctx.JSON(sperre.Status, sperre.Body)
+			} else if errors.Is(err, user_model.ErrBlockedUser) {
 				ctx.APIError(http.StatusForbidden, err.Error())
 			} else {
 				ctx.APIErrorInternal(err)

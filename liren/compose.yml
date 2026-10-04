@@ -1,0 +1,49 @@
+name: liren-gitea
+services:
+  gitea:
+    image: liren-gitea:28.0.0
+    build:
+      context: ..
+      args:
+        GITEA_VERSION: 28.0.0
+        TAGS: sqlite sqlite_unlock_notify
+    ports:
+      - "127.0.0.1:3300:3000"
+    volumes:
+      - daten:/data
+    environment:
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__database__PATH: /data/gitea/gitea.db
+      GITEA__server__ROOT_URL: http://127.0.0.1:3300/
+      GITEA__server__OFFLINE_MODE: "true"
+      GITEA__server__DISABLE_SSH: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__actions__ENABLED: "false"
+      GITEA__repository__DISABLE_MIGRATIONS: "true"
+      LIREN_ENABLED: "true"
+      REFERENZ_MODUS: lokal
+      LIREN_APP: ${LIREN_APP:?Die eigene lokale App-Kennung fehlt}
+      LIREN_WIDGET_ORIGIN: ${LIREN_WIDGET_ORIGIN:-http://localhost:5178}
+      LIREN_DIENST_URL: http://127.0.0.1:3303
+      LIREN_DIENST_SECRET: ${LIREN_DIENST_GEHEIMNIS:?Das Dienstgeheimnis fehlt}
+  dienst:
+    image: liren-gitea-dienst:0.28.0
+    build:
+      context: ..
+      dockerfile: liren/Dockerfile.dienst
+    network_mode: "service:gitea"
+    depends_on:
+      - gitea
+    environment:
+      LIREN_API_KEY: ${LIREN_API_KEY:?Der lokale App-Schlüssel fehlt}
+      LIREN_REFERENCE_KEY: ${LIREN_REFERENCE_KEY:?Der Referenzschlüssel fehlt}
+      LIREN_DIENST_GEHEIMNIS: ${LIREN_DIENST_GEHEIMNIS:?Das Dienstgeheimnis fehlt}
+      LIREN_NUTZER_ID_FORMAT: ziffern
+      LIREN_DIENST_HOST: 127.0.0.1
+      LIREN_DIENST_PORT: "3303"
+      LIREN_API_URL: ${LIREN_API_URL:-http://host.docker.internal:3001}
+volumes:
+  daten:
+    external: true
+    name: liren-gitea-dev

@@ -61,11 +61,14 @@
 					</div>
 					<div class="ui attached segment comment-body" role="article">
 						<div class="render-content markup" {{if or $.Permission.IsAdmin $.HasIssuesOrPullsWritePermission (and $.IsSigned (eq $.SignedUserID .PosterID))}}data-can-edit="true"{{end}}>
+							{{$lirenEnde := and $.LirenAktiv $.IsSigned (eq $.SignedUserID $.Issue.PosterID) (gt .PosterID 0) (ne $.SignedUserID .PosterID)}}
+							{{if $lirenEnde}}<liren-gate other-user-id="{{.PosterID}}" gate="issue-comments" gate-side="end" name="{{.Poster.GetDisplayName}}"><div class="tw-w-full">{{end}}
 							{{if .RenderedContent}}
 								{{.RenderedContent}}
 							{{else}}
 								<span class="no-content">{{ctx.Locale.Tr "repo.issues.no_content"}}</span>
 							{{end}}
+							{{if $lirenEnde}}</div></liren-gate>{{end}}
 						</div>
 						<div id="{{.HashTag}}-raw" class="raw-content tw-hidden">{{.Content}}</div>
 						<div class="edit-content-zone tw-hidden" data-update-url="{{$.RepoLink}}/comments/{{.ID}}" data-content-version="{{.ContentVersion}}" data-context="{{$.RepoLink}}" data-attachment-url="{{$.RepoLink}}/comments/{{.ID}}/attachments"></div>

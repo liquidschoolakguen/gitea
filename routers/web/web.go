@@ -47,6 +47,7 @@ import (
 	auth_service "gitea.dev/services/auth"
 	"gitea.dev/services/context"
 	"gitea.dev/services/forms"
+	liren_service "gitea.dev/services/liren"
 
 	_ "gitea.dev/modules/session" // to register all internal adapters
 
@@ -267,6 +268,12 @@ const RouterMockPointBeforeWebRoutes = "before-web-routes"
 
 // Routes returns all web routes
 func Routes() *web.Router {
+	if err := liren_service.Initialisiere(); err != nil {
+		panic(err)
+	}
+	if _, _, aktiv := liren_service.AppKonfiguration(); aktiv && !setting.Repository.DisableMigrations {
+		panic("Die lokale Liren-Vorführung verlangt repository.DISABLE_MIGRATIONS=true; Bestandsimporte sind nicht Teil des Kommentartors")
+	}
 	routes := web.NewRouter()
 
 	// GetHead allows a HEAD request redirect to GET if HEAD method is not defined for that route
@@ -359,6 +366,10 @@ func registerWebRoutes(m *web.Router, webAuth *AuthMiddleware) {
 	reqSignOut := verifyAuthWithOptions(&common.VerifyOptions{SignOutRequired: true})
 	// middleware: optional sign in (if signed in, use the user as doer, if not, no doer)
 	optSignIn := verifyAuthWithOptions(&common.VerifyOptions{SignInRequired: setting.Service.RequireSignInViewStrict})
+	if _, _, aktiv := liren_service.AppKonfiguration(); aktiv {
+		m.Get("/liren/ich", optSignIn, repo.LirenSitzung)
+		m.Post("/liren/issues/{issueID}/{lirenRoute}", optSignIn, repo.LirenRoute)
+	}
 	optExploreSignIn := verifyAuthWithOptions(&common.VerifyOptions{SignInRequired: setting.Service.RequireSignInViewStrict || setting.Service.Explore.RequireSigninView})
 	// middleware: only apply CrossOriginProtection
 	crossOriginProtect := verifyAuthWithOptions(&common.VerifyOptions{DisableCrossOriginProtection: false})

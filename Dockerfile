@@ -7,6 +7,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 COPY --exclude=.git/ . .
 RUN make frontend
+COPY .liren-pakete/browser /src/public/assets/liren/sdk
+COPY liren/app.mjs /src/public/assets/liren/app.mjs
 
 # Build backend for each target platform
 FROM docker.io/library/golang:1.27-alpine3.24 AS build-env
@@ -23,6 +25,7 @@ RUN apk --no-cache add \
 
 WORKDIR ${GOPATH}/src/gitea.dev
 COPY go.mod go.sum ./
+COPY .liren-pakete/go .liren-pakete/go
 RUN go mod download
 # Use COPY instead of bind mount as read-only one breaks makefile state tracking and read-write one needs binary to be moved as it's discarded.
 # ".git" directory is mounted separately later only for version data extraction.

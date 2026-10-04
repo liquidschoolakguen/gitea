@@ -26,6 +26,7 @@ import (
 	"gitea.dev/services/convert"
 	"gitea.dev/services/forms"
 	issue_service "gitea.dev/services/issue"
+	liren_service "gitea.dev/services/liren"
 	pull_service "gitea.dev/services/pull"
 )
 
@@ -63,6 +64,10 @@ func NewComment(ctx *context.Context) {
 	if form.Content != "" || len(attachments) > 0 {
 		comment, err := issue_service.CreateIssueComment(ctx, ctx.Doer, ctx.Repo.Repository, issue, form.Content, attachments)
 		if err != nil {
+			if sperre, ok := errors.AsType[*liren_service.SperrFehler](err); ok {
+				ctx.JSON(sperre.Status, sperre.Body)
+				return
+			}
 			if errors.Is(err, user_model.ErrBlockedUser) {
 				ctx.JSONError(ctx.Tr("repo.issues.comment.blocked_user"))
 			} else {
@@ -220,6 +225,14 @@ func UpdateCommentContent(ctx *context.Context) {
 		ctx.JSONError(ctx.Tr("repo.comments.edit.already_changed"))
 		return
 	}
+	if err := issue_service.PruefeKommentarAenderung(ctx, comment, ctx.Doer); err != nil {
+		if sperre, ok := errors.AsType[*liren_service.SperrFehler](err); ok {
+			ctx.JSON(sperre.Status, sperre.Body)
+		} else {
+			ctx.ServerError("PruefeKommentarAenderung", err)
+		}
+		return
+	}
 
 	if newContent != comment.Content {
 		// allow to save empty content
@@ -227,7 +240,9 @@ func UpdateCommentContent(ctx *context.Context) {
 		comment.Content = newContent
 
 		if err = issue_service.UpdateComment(ctx, comment, contentVersion, ctx.Doer, oldContent); err != nil {
-			if errors.Is(err, user_model.ErrBlockedUser) {
+			if sperre, ok := errors.AsType[*liren_service.SperrFehler](err); ok {
+				ctx.JSON(sperre.Status, sperre.Body)
+			} else if errors.Is(err, user_model.ErrBlockedUser) {
 				ctx.JSONError(ctx.Tr("repo.issues.comment.blocked_user"))
 			} else if errors.Is(err, issues_model.ErrCommentAlreadyChanged) {
 				ctx.JSONError(ctx.Tr("repo.comments.edit.already_changed"))
