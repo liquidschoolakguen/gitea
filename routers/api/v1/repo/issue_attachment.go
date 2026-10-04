@@ -263,6 +263,17 @@ func EditIssueAttachment(ctx *context.APIContext) {
 	if attachment == nil {
 		return
 	}
+	// Auch ein Kommentar-Anhang kann über diesen älteren Eingang adressiert werden.
+	if attachment.CommentID != 0 {
+		comment, err := issues_model.GetCommentByID(ctx, attachment.CommentID)
+		if err != nil {
+			ctx.APIErrorAuto(err)
+			return
+		}
+		if !pruefeLirenKommentarAnhang(ctx, comment) {
+			return
+		}
+	}
 
 	// do changes to attachment. only meaningful change is name.
 	form := web.GetForm[*api.EditAttachmentOptions](ctx)

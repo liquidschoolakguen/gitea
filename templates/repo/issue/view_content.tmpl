@@ -1,4 +1,15 @@
 <div class="issue-content">
+	{{if .LirenAktiv}}
+		<section class="ui message" id="liren-app-config" data-app="{{.LirenApp}}" data-widget-origin="{{.LirenWidgetOrigin}}" data-user-id="{{.LirenUser}}" data-issue-id="{{.Issue.ID}}">
+			<strong>Lokale Liren-Vorführung</strong>
+			{{if .IsSigned}}
+				<p>App-Konto: {{.SignedUser.Name}}. Der Liren-Knopf verbindet dieses App-Konto; Gitea sieht deinen Liren-Kontonamen nicht.</p>
+				<liren-self-link managed></liren-self-link>
+			{{else}}
+				<p>Für Liren zuerst bei Gitea anmelden. Öffentliche Inhalte bleiben lesbar.</p>
+			{{end}}
+		</section>
+	{{end}}
 	{{$createdStr:= DateUtils.TimeSince .Issue.CreatedUnix}}
 	<div class="issue-content-left">
 		<div class="comment-list">
@@ -46,11 +57,14 @@
 					</div>
 					<div class="ui attached segment comment-body" role="article">
 						<div class="render-content markup" {{if or $.Permission.IsAdmin $.HasIssuesOrPullsWritePermission $.IsIssuePoster}}data-can-edit="true"{{end}}>
+							{{$lirenInhalt := and .LirenAktiv .IsSigned (gt .Issue.PosterID 0) (ne .SignedUserID .Issue.PosterID)}}
+							{{if $lirenInhalt}}<liren-gate other-user-id="{{.Issue.PosterID}}" gate="issue-publications" gate-side="end" name="{{.Issue.Poster.GetDisplayName}}"><div class="tw-w-full">{{end}}
 							{{if .Issue.RenderedContent}}
 								{{.Issue.RenderedContent}}
 							{{else}}
 								<span class="no-content">{{ctx.Locale.Tr "repo.issues.no_content"}}</span>
 							{{end}}
+							{{if $lirenInhalt}}</div></liren-gate>{{end}}
 						</div>
 						<div id="{{.Issue.HashTag}}-raw" class="raw-content tw-hidden">{{.Issue.Content}}</div>
 						<div class="edit-content-zone tw-hidden" data-update-url="{{$.RepoLink}}/issues/{{.Issue.Index}}/content" data-content-version="{{.Issue.ContentVersion}}" data-context="{{.RepoLink}}" data-attachment-url="{{$.RepoLink}}/issues/{{.Issue.Index}}/attachments" data-view-attachment-url="{{$.RepoLink}}/issues/{{.Issue.Index}}/view-attachments"></div>
@@ -80,11 +94,13 @@
 					</a>
 					<div class="content">
 						<div class="ui segment avatar-content-left-arrow">
+							{{$lirenAnfang := and .LirenAktiv (gt .Issue.PosterID 0) (ne .SignedUserID .Issue.PosterID)}}
+							{{if $lirenAnfang}}<liren-gate other-user-id="{{.Issue.PosterID}}" gate="issue-comments" name="{{.Issue.Poster.GetDisplayName}}">{{end}}
 							<form class="ui form form-fetch-action" id="comment-form" action="{{$.RepoLink}}/issues/{{.Issue.Index}}/comments" method="post">
 								{{template "repo/issue/comment_tab" .}}
 								<div class="field footer">
 									<div class="flex-text-block tw-justify-end">
-										{{if and (or .HasIssuesOrPullsWritePermission .IsIssuePoster) (not .DisableStatusChange)}}
+										{{if and (not $lirenAnfang) (or .HasIssuesOrPullsWritePermission .IsIssuePoster) (not .DisableStatusChange)}}
 											{{$btnIconColor := ""}}{{$btnIcon := ""}}{{$btnTextNoComment := ""}}{{$btnTextWithComment := ""}}{{$btnValue := ""}}
 											{{if .Issue.IsClosed}}
 												{{$btnValue = "reopen"}}
@@ -110,6 +126,16 @@
 									</div>
 								</div>
 							</form>
+							{{if $lirenAnfang}}</liren-gate>{{end}}
+							{{if and $lirenAnfang (or .HasIssuesOrPullsWritePermission .IsIssuePoster) (not .DisableStatusChange)}}
+								<form class="ui form form-fetch-action" action="{{$.RepoLink}}/issues/{{.Issue.Index}}/comments" method="post">
+									{{if .Issue.IsClosed}}
+										<button class="ui button" type="submit" name="status" value="reopen">{{ctx.Locale.Tr (Iif .Issue.IsPull "repo.pulls.reopen" "repo.issues.reopen_issue")}}</button>
+									{{else}}
+										<button class="ui button" type="submit" name="status" value="close">{{ctx.Locale.Tr (Iif .Issue.IsPull "repo.pulls.close" "repo.issues.close")}}</button>
+									{{end}}
+								</form>
+							{{end}}
 						</div>
 					</div>
 				</div>

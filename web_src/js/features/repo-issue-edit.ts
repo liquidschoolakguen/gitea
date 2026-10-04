@@ -55,6 +55,12 @@ async function tryOnEditContent(e: Event) {
       applyAreYouSure(editContentZone.querySelector('form')!); // the form is no longer dirty
       editContentZone.setAttribute('data-content-version', data.contentVersion);
 
+      // Die vollständige Seite baut den Liren-Kreis mit dem gespeicherten Inhalt erneut auf.
+      if (renderContent.querySelector('liren-gate')) {
+        window.location.reload();
+        return;
+      }
+
       // replace the render content with new one, to trigger re-initialization of all features
       const newRenderContent = renderContent.cloneNode(false) as HTMLElement;
       newRenderContent.innerHTML = data.content;

@@ -120,3 +120,8 @@ prime/
 
 # A Makefile for custom make targets
 Makefile.local
+
+/.liren-pakete/
+/liren/sdk/
+/.liren-lokal/
+/.pnpm-store/

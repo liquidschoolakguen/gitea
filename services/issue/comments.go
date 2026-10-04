@@ -18,6 +18,7 @@ import (
 	"gitea.dev/modules/log"
 	"gitea.dev/modules/timeutil"
 	git_service "gitea.dev/services/git"
+	liren_service "gitea.dev/services/liren"
 	notify_service "gitea.dev/services/notify"
 
 	"xorm.io/builder"
@@ -66,6 +67,9 @@ func CreateIssueComment(ctx context.Context, doer *user_model.User, repo *repo_m
 		}
 	}
 
+	if err := liren_service.PruefeKommentar(doer.ID, issue.PosterID); err != nil {
+		return nil, err
+	}
 	comment, err := issues_model.CreateComment(ctx, &issues_model.CreateCommentOptions{
 		Type:        issues_model.CommentTypeComment,
 		Doer:        doer,
@@ -94,6 +98,17 @@ func CreateIssueComment(ctx context.Context, doer *user_model.User, repo *repo_m
 	return comment, nil
 }
 
+// PruefeKommentarAenderung schützt neue Inhalte eines normalen Kommentars vor dem ersten Schreiben.
+func PruefeKommentarAenderung(ctx context.Context, c *issues_model.Comment, doer *user_model.User) error {
+	if c.Type != issues_model.CommentTypeComment {
+		return nil
+	}
+	if err := c.LoadIssue(ctx); err != nil {
+		return err
+	}
+	return liren_service.PruefeKommentar(doer.ID, c.Issue.PosterID)
+}
+
 // UpdateComment updates information of comment.
 func UpdateComment(ctx context.Context, c *issues_model.Comment, contentVersion int, doer *user_model.User, oldContent string) error {
 	if err := c.LoadIssue(ctx); err != nil {
@@ -109,6 +124,9 @@ func UpdateComment(ctx context.Context, c *issues_model.Comment, contentVersion 
 		}
 	}
 
+	if err := PruefeKommentarAenderung(ctx, c, doer); err != nil {
+		return err
+	}
 	needsContentHistory := c.Content != oldContent && c.Type.HasContentSupport()
 	if needsContentHistory {
 		hasContentHistory, err := issues_model.HasIssueContentHistory(ctx, c.IssueID, c.ID)

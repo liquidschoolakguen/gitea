@@ -20,6 +20,7 @@ import (
 	"gitea.dev/services/context/upload"
 	"gitea.dev/services/convert"
 	issue_service "gitea.dev/services/issue"
+	liren_service "gitea.dev/services/liren"
 )
 
 // GetIssueCommentAttachment gets a single attachment of the comment
@@ -178,6 +179,9 @@ func CreateIssueCommentAttachment(ctx *context.APIContext) {
 	if !canUserWriteIssueCommentAttachment(ctx, comment) {
 		return
 	}
+	if !pruefeLirenKommentarAnhang(ctx, comment) {
+		return
+	}
 
 	// Get uploaded file from request
 	file, header, err := ctx.Req.FormFile("attachment")
@@ -277,6 +281,10 @@ func EditIssueCommentAttachment(ctx *context.APIContext) {
 	if attach == nil {
 		return
 	}
+	comment := getIssueCommentSafe(ctx)
+	if comment == nil || !pruefeLirenKommentarAnhang(ctx, comment) {
+		return
+	}
 
 	form := web.GetForm[*api.EditAttachmentOptions](ctx)
 	if form.Name != "" {
@@ -341,6 +349,18 @@ func DeleteIssueCommentAttachment(ctx *context.APIContext) {
 		return
 	}
 	ctx.Status(http.StatusNoContent)
+}
+
+func pruefeLirenKommentarAnhang(ctx *context.APIContext, comment *issues_model.Comment) bool {
+	if err := issue_service.PruefeKommentarAenderung(ctx, comment, ctx.Doer); err != nil {
+		if sperre, ok := errors.AsType[*liren_service.SperrFehler](err); ok {
+			ctx.JSON(sperre.Status, sperre.Body)
+		} else {
+			ctx.APIErrorInternal(err)
+		}
+		return false
+	}
+	return true
 }
 
 func getIssueCommentSafe(ctx *context.APIContext) *issues_model.Comment {

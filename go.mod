@@ -4,6 +4,8 @@ go 1.27
 
 toolchain go1.27.1
 
+replace github.com/liquidschoolakguen/NM/packages/liren-go => ./.liren-pakete/go
+
 require (
 	connectrpc.com/connect v1.21.0
 	gitea.com/go-chi/binding v0.0.0-20260819122636-082915a69981
@@ -64,6 +66,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/klauspost/compress v1.20.0
 	github.com/lib/pq v1.12.3
+	github.com/liquidschoolakguen/NM/packages/liren-go v0.0.0-20261004014637-0ceb477a0319
 	github.com/markbates/goth v1.82.0
 	github.com/mattn/go-isatty v0.0.24
 	github.com/mattn/go-sqlite3 v1.14.52

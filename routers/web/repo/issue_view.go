@@ -37,6 +37,7 @@ import (
 	"gitea.dev/services/context"
 	"gitea.dev/services/context/upload"
 	issue_service "gitea.dev/services/issue"
+	liren_service "gitea.dev/services/liren"
 	"gitea.dev/services/notifications"
 	pull_service "gitea.dev/services/pull"
 	user_service "gitea.dev/services/user"
@@ -291,6 +292,11 @@ func prepareIssueViewLoad(ctx *context.Context) *issues_model.Issue {
 	}
 	issue.Repo = ctx.Repo.Repository
 	ctx.Data["Issue"] = issue
+	ctx.Data["LirenApp"], ctx.Data["LirenWidgetOrigin"], ctx.Data["LirenAktiv"] = liren_service.AppKonfiguration()
+	ctx.Data["LirenUser"] = ""
+	if ctx.Doer != nil {
+		ctx.Data["LirenUser"] = strconv.FormatInt(ctx.Doer.ID, 10)
+	}
 
 	if err = issue.LoadPullRequest(ctx); err != nil {
 		ctx.ServerError("LoadPullRequest", err)

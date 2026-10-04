@@ -88,3 +88,8 @@ prime/
 
 # Manpage
 /man
+
+/.liren-lokal/
+/.liren-pakete/node_modules/
+/.pnpm-store/
+/liren/sdk/
