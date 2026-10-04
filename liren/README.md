@@ -43,6 +43,10 @@ node --test liren/pruefung-konfiguration.test.mjs liren/pruef-lauf.test.mjs
 node liren/pruefen.mjs
 ```
 
+Der äußere Nachzieh-Prozess darf mit `LIREN_PRUEF_TOKEN` eine eigene Kennung
+aus genau 20 hexadezimalen Zeichen vorgeben. Damit kann er den Prüfstand auch
+nach einem hart beendeten Unterprozess gezielt freigeben.
+
 Jeder Lauf verwendet eigene freie Ports, einen eigenen Compose-Projektnamen
 und eigene Image-Verweise. Auch bei Fehler oder Abbruch werden ausschließlich
 seine Container und sein Prüfvolume entfernt. Die Vorführung und deren Daten

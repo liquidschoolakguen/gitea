@@ -5,7 +5,8 @@ import {fileURLToPath} from 'node:url';
 import {pruefeIsoliert, abbruchSteuerung} from './pruef-lauf.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const token = randomBytes(10).toString('hex');
+const token = process.env.LIREN_PRUEF_TOKEN ?? randomBytes(10).toString('hex');
+if (!/^[a-f0-9]{20}$/u.test(token)) throw new Error('Ungültige eigene Prüfkennung.');
 async function freierPort() {
   const server = createServer();
   await new Promise((resolve, reject) => {server.once('error', reject); server.listen(0, '127.0.0.1', resolve)});
