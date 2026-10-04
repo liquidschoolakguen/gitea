@@ -30,5 +30,5 @@ export async function pruefeIsoliert({token, port, kontrollPort, node, quellen, 
     }
   }
   if (fehler instanceof Error) throw fehler;
-  if (fehler) throw new Error(String(fehler));
+  if (fehler) throw new Error('Die Prüfung lieferte keinen lesbaren Fehler.', {cause: fehler});
 }
